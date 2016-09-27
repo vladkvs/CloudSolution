@@ -9,7 +9,7 @@ namespace CloudSolution
 {
     public interface ICloud
     {
-        string GetServiceToken();
+        Task<string> GetServiceToken();
         string GetFolderList(string path);
         string GetFileList(string path);
         Stream DownloadFile(string sourceFile);
