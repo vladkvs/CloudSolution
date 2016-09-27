@@ -16,44 +16,95 @@ namespace CloudSolution
 {
     public class AmazonCloud : ICloud
     {
+        private readonly string _accessKey;
+        private readonly string _secretKey;
+        private readonly RegionEndpoint _endpoint;
         private AmazonS3Client httpClient;
 
         public AmazonCloud(string accessKey, string secretKey, RegionEndpoint endpoint)
         {
-            httpClient = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey), endpoint);
+            _accessKey = accessKey;
+            _secretKey = secretKey;
+            _endpoint = endpoint;
         }
 
-        public Task<string> GetServiceToken()
+        private Task DoLogin()
         {
-            ListObjectsRequest request = new ListObjectsRequest()
+            return Task.Run(() =>
             {
-                BucketName = "master7246",
-                MaxKeys = 2
-            };
+                httpClient = new AmazonS3Client(new BasicAWSCredentials(_accessKey, _secretKey),
+                    _endpoint);
+            });
+        } 
 
-            var objs = httpClient.ListObjects("master7246");
+        public async Task<string> GetServiceToken()
+        {
+            await DoLogin();
 
-            return null;
+            return string.Empty;
         }
 
         public string GetFolderList(string path)
         {
-            throw new NotImplementedException();
+
+            return null;
         }
 
         public string GetFileList(string path)
         {
-            throw new NotImplementedException();
+            var response = httpClient.ListObjectsV2(new ListObjectsV2Request()
+            {
+                BucketName = "master7246"
+            });
+
+            if (response.HttpStatusCode == HttpStatusCode.OK)
+            {
+                var files  = response.S3Objects.Where(x => x.Size > 0 && !x.Key.Contains(@"/")).ToList();
+                string filesString = string.Empty;
+                files.ForEach(f => filesString += f.Key + "\r" + f.Size + "\n");
+                return filesString;
+            }
+
+            return null;
         }
 
         public Stream DownloadFile(string sourceFile)
         {
-            throw new NotImplementedException();
+            var request = new GetObjectRequest()
+            {
+                BucketName = "master7246",
+                Key = sourceFile
+            };
+            var response = httpClient.GetObject(request);
+
+            if (response.HttpStatusCode == HttpStatusCode.OK)
+            {
+                return response.ResponseStream;
+            }
+
+            return null;
         }
 
         public string DownloadFile(string sourceFile, string destinationFile)
         {
-            throw new NotImplementedException();
+            var stream = this.DownloadFile(sourceFile);
+            if (stream == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var fileStream = File.Create(destinationFile);
+                stream.CopyTo(fileStream);
+                fileStream.Close();
+
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
         public string UploadFile(Stream sourceDataStream, string destFileName)
