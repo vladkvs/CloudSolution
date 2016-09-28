@@ -19,8 +19,8 @@ namespace CloudSolution
         private string CloudDomain = "https://cloud.mail.ru";
         private string AuthDomen = "https://auth.mail.ru";
 
-        private HttpClient httpClient;
-        private string token;
+        private readonly HttpClient _httpClient;
+        private string _token;
 
         public string Login { get; set; }
         public string Password { get; set; }
@@ -35,46 +35,47 @@ namespace CloudSolution
                 CookieContainer = new CookieContainer(),
                 UseCookies = true
             };
-            httpClient = new HttpClient(handler);
+            _httpClient = new HttpClient(handler);
+            _httpClient.DefaultRequestHeaders.UserAgent.Clear();
+            _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
         }
 
-        private void DoLogin()
+        private async Task<string> DoLogin()
         {
             string reqString = $"Login={Login}&Domain={Domain}&Password={this.Password}";
             string address = $"{AuthDomen}/cgi-bin/auth";
 
-            httpClient.DefaultRequestHeaders.UserAgent.Clear();
-            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
-
-            var response = httpClient.PostAsync(address, new StringContent(reqString)).Result;
+            var response = await _httpClient.PostAsync(address, new StringContent(reqString));
             if (response.IsSuccessStatusCode)
             {
                 address = $"{AuthDomen}/sdc?from={CloudDomain}/home";
-                response = httpClient.GetAsync(address).Result;
+                response = await _httpClient.GetAsync(address);
                 if (response.IsSuccessStatusCode)
                 {
-                    address = $"{CloudDomain}/api/v2/tokens/csrf";
-                    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    httpClient.DefaultRequestHeaders.UserAgent.Clear();
-                    httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
-                    response = httpClient.GetAsync(address).Result;
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var result = response.Content.ReadAsStringAsync().Result;
-                        dynamic jsonObj = JObject.Parse(result);
-                        this.token = jsonObj.body.token;
-                    }
+                    await CheckAuth();
+                    return _token;
                 }
             }
+
+            return string.Empty;
         }
 
-        public Task<string> GetServiceToken()
+        private async Task CheckAuth()
         {
-            return Task.Run(() =>
+            string address = $"{CloudDomain}/api/v2/tokens/csrf";
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _httpClient.GetAsync(address);
+            if (response.IsSuccessStatusCode)
             {
-                DoLogin();
-                return token;
-            });
+                var result = response.Content.ReadAsStringAsync().Result;
+                dynamic jsonObj = JObject.Parse(result);
+                this._token = jsonObj.body.token;
+            }
+        } 
+
+        public async Task<string> GetServiceToken()
+        {
+            return await DoLogin();
         }
 
         public string GetFolderList(string path)
@@ -85,9 +86,9 @@ namespace CloudSolution
             }
 
             var uri =
-                new Uri($"{CloudDomain}/api/v2/folder?token={token}&home={HttpUtility.UrlEncode(path)}");
+                new Uri($"{CloudDomain}/api/v2/folder?token={_token}&home={HttpUtility.UrlEncode(path)}");
             
-            var response = httpClient.GetAsync(uri).Result;
+            var response = _httpClient.GetAsync(uri).Result;
             if (response.IsSuccessStatusCode)
             {
 
@@ -119,24 +120,23 @@ namespace CloudSolution
 
         public string UploadFile(string sourceFile, string destinationFile)
         {
-            string shardUrl = this.GetUrlForAction(ShardType.Upload);
+            string shardUrl = GetUrlForAction(ShardType.Upload).Result;
 
             string url = $"{shardUrl}?cloud_domain=2&{Login}";
             FileStream file = File.Open("D:/Downloads/1cd375df-55a7-4ba6-b604-a6820123f9a0.jpg", FileMode.Open);
-            var content = new MultipartFormDataContent();
-            content.Add(new StreamContent(file));
+            var content = new MultipartFormDataContent {new StreamContent(file)};
 
-            var response = httpClient.PostAsync(url, content).Result;
+            var response = _httpClient.PostAsync(url, content).Result;
             var result = response.Content.ReadAsStringAsync().Result;
             return null;
         }
 
         public string CreateFolder(string path)
         {
-            string reqString =$"home={HttpUtility.UrlEncode(path)}&conflict=rename&api={2}&token={token}";
+            string reqString =$"home={HttpUtility.UrlEncode(path)}&conflict=rename&api={2}&token={_token}";
             
             var url = new Uri($"{CloudDomain}/api/v2/folder/add");
-            var response = httpClient.PostAsync(url, new StringContent(reqString)).Result;
+            var response = _httpClient.PostAsync(url, new StringContent(reqString)).Result;
 
             if (response.IsSuccessStatusCode)
             {
@@ -152,14 +152,16 @@ namespace CloudSolution
             throw new NotImplementedException();
         }
 
-        private string GetUrlForAction(ShardType shardType)
+        private async Task<string> GetUrlForAction(ShardType shardType)
         {
-            string uri = $"{CloudDomain}/api/v2/dispatcher?token={token}";
+            await this.CheckAuth();
 
-            var response = httpClient.GetAsync(uri).Result;
+            string uri = $"{CloudDomain}/api/v2/dispatcher?token={_token}";
+
+            var response = await _httpClient.GetAsync(uri);
             if (response.IsSuccessStatusCode)
             {
-                var result = response.Content.ReadAsStringAsync().Result;
+                var result = await response.Content.ReadAsStringAsync();
 
                 dynamic jObj = JObject.Parse(result);
                 var memberInfo = typeof(ShardType).GetMember(shardType.ToString());

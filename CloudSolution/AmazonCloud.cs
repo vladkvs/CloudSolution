@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Configuration;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.IO;
 using Amazon.S3.Model;
+using Amazon.SecurityToken;
+using Amazon.SecurityToken.Model;
 using Microsoft.SqlServer.Server;
 
 namespace CloudSolution 
@@ -18,43 +22,59 @@ namespace CloudSolution
     {
         private readonly string _accessKey;
         private readonly string _secretKey;
+        private readonly string _bucketName;
         private readonly RegionEndpoint _endpoint;
-        private AmazonS3Client httpClient;
+        private AmazonS3Client _httpClient;
 
         public AmazonCloud(string accessKey, string secretKey, RegionEndpoint endpoint)
         {
             _accessKey = accessKey;
             _secretKey = secretKey;
             _endpoint = endpoint;
+            _bucketName = ConfigurationManager.AppSettings["Bucket"];
         }
 
-        private Task DoLogin()
+        private Task<string> DoLogin()
         {
             return Task.Run(() =>
             {
-                httpClient = new AmazonS3Client(new BasicAWSCredentials(_accessKey, _secretKey),
-                    _endpoint);
+                var credentials = new BasicAWSCredentials(_accessKey, _secretKey);
+                _httpClient = new AmazonS3Client(new BasicAWSCredentials(_accessKey, _secretKey), _endpoint);
+                return credentials.GetCredentials().Token;
             });
         } 
 
         public async Task<string> GetServiceToken()
         {
-            await DoLogin();
-
-            return string.Empty;
+            return await DoLogin();
         }
 
         public string GetFolderList(string path)
         {
+            var request = new ListObjectsV2Request()
+            {
+                BucketName = _bucketName,
+                Prefix = path
+            };
 
-            return null;
+            var response = _httpClient.ListObjectsV2(request);
+
+            if (response.HttpStatusCode == HttpStatusCode.OK)
+            {
+                var folders = response.S3Objects.Where(x => x.Size == 0 && x.Key.EndsWith(@"/")).ToList();
+                string folderString = string.Empty;
+                folders.ForEach(f => folderString += f.Key + "\n");
+                return folderString;
+            }
+
+            return string.Empty;
         }
 
         public string GetFileList(string path)
         {
-            var response = httpClient.ListObjectsV2(new ListObjectsV2Request()
+            var response = _httpClient.ListObjectsV2(new ListObjectsV2Request()
             {
-                BucketName = "master7246"
+                BucketName = _bucketName
             });
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
@@ -65,17 +85,17 @@ namespace CloudSolution
                 return filesString;
             }
 
-            return null;
+            return string.Empty;
         }
 
         public Stream DownloadFile(string sourceFile)
         {
             var request = new GetObjectRequest()
             {
-                BucketName = "master7246",
+                BucketName = _bucketName,
                 Key = sourceFile
             };
-            var response = httpClient.GetObject(request);
+            var response = _httpClient.GetObject(request);
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
             {
@@ -109,9 +129,9 @@ namespace CloudSolution
 
         public string UploadFile(Stream sourceDataStream, string destFileName)
         {
-            var response = httpClient.PutObject(new PutObjectRequest()
+            var response = _httpClient.PutObject(new PutObjectRequest()
             {
-                BucketName = "master7246",
+                BucketName = _bucketName,
                 InputStream = sourceDataStream,
                 Key = destFileName
             });
@@ -126,9 +146,9 @@ namespace CloudSolution
 
         public string UploadFile(string sourceFile, string destinationFile)
         {
-            var response = httpClient.PutObject(new PutObjectRequest()
+            var response = _httpClient.PutObject(new PutObjectRequest()
             {
-                BucketName = "master7246",
+                BucketName = _bucketName,
                 FilePath = sourceFile,
                 Key = destinationFile
             });
@@ -145,13 +165,13 @@ namespace CloudSolution
         {
             var putRequest = new PutObjectRequest()
             {
-                BucketName = "master7246",
+                BucketName = _bucketName,
                 StorageClass = S3StorageClass.Standard,
                 ServerSideEncryptionMethod = ServerSideEncryptionMethod.None,
                 Key = path + "/",
                 ContentBody = string.Empty
             };
-            var response = httpClient.PutObject(putRequest);
+            var response = _httpClient.PutObject(putRequest);
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
             {
@@ -165,13 +185,13 @@ namespace CloudSolution
         {
             var deleteRequest = new DeleteObjectRequest()
             {
-                BucketName = "master7246",
+                BucketName = _bucketName,
                 Key = path
             };
 
             try
             {
-                var response = httpClient.DeleteObject(deleteRequest);
+                var response = _httpClient.DeleteObject(deleteRequest);
                 return string.Empty;
             }
             catch (Exception ex)
