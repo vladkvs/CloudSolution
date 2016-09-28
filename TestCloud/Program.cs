@@ -20,7 +20,7 @@ namespace TestCloud
             //string folderList = mailRu.GetFolderList("");
             //string uploadFile = mailRu.UploadFile("", "");
 
-            AmazonCloud amazon = new AmazonCloud("AKIAJEIEBKP46GHCNIEA", "AxwbIG7GPnQ3CBe7wo8HNcQF8LEMS1suTMnmN9aV", RegionEndpoint.EUCentral1);
+            AmazonCloud amazon = new AmazonCloud("", "", RegionEndpoint.EUCentral1);
             string token = amazon.GetServiceToken().Result;
             //string result = amazon.CreateFolder("newfolder10/newfolder11/newfolder12");
             //string result =
