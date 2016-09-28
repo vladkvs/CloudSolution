@@ -74,7 +74,8 @@ namespace CloudSolution
         {
             var response = _httpClient.ListObjectsV2(new ListObjectsV2Request()
             {
-                BucketName = _bucketName
+                BucketName = _bucketName,
+                Prefix = path
             });
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
