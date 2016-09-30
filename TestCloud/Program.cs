@@ -31,8 +31,8 @@ namespace TestCloud
             //var downloadFile = amazon.DownloadFile("newfolder10/newfolder11/test12.jpg", "D:/Downloads/test.jpg");
             //string result = amazon.GetFileList("");
 
-            FourSharedCloud fourShared = new FourSharedCloud();
-            var user = fourShared.GetUser();
+            FourSharedCloud fourShared = new FourSharedCloud("", "");
+            var user = fourShared.GetServiceToken().Result;
         }
     }
 }
