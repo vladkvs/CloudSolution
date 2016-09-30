@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using CloudSolution.FourShared;
+using DotNetOpenAuth.Messaging;
 
 namespace CloudSolution
 {
@@ -40,6 +41,21 @@ namespace CloudSolution
 
                 return _accessToken;
             });
+        }
+
+        public string GetUserInfo()
+        {
+            var request =
+                _consumer.PrepareAuthorizedRequest(
+                    new MessageReceivingEndpoint(
+                        "https://api.4shared.com/v1_2/user",
+                        HttpDeliveryMethods.GetRequest | HttpDeliveryMethods.AuthorizationHeaderRequest),
+                    _accessToken, new List<MultipartPostPart>());
+
+            var response = (HttpWebResponse)request.GetResponse();
+            var reader = new StreamReader(response.GetResponseStream());
+
+            return reader.ReadToEnd();
         }
 
         public string GetFolderList(string path)
