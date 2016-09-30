@@ -1,30 +1,50 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using System.Web.Configuration;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.S3.IO;
 using Amazon.S3.Model;
-using Amazon.SecurityToken;
-using Amazon.SecurityToken.Model;
-using Microsoft.SqlServer.Server;
+using Amazon.S3.Util;
 
-namespace CloudSolution 
+namespace Cloud.Core.Amazon 
 {
     public class AmazonCloud : ICloud
     {
-        private readonly string _accessKey;
-        private readonly string _secretKey;
         private readonly string _bucketName;
-        private readonly RegionEndpoint _endpoint;
+        private string _accessKey;
+        private string _secretKey;
+        private RegionEndpoint _endpoint;
         private AmazonS3Client _httpClient;
+
+        public string AccessKey
+        {
+            get { return _accessKey; }
+            set { _accessKey = value; }
+        }
+
+        public string SecretKey
+        {
+            get { return _secretKey; }
+            set { _secretKey = value; }
+        }
+
+        public RegionEndpoint Endpoint
+        {
+            get { return _endpoint; }
+            set { _endpoint = value; }
+        }
+
+        public AmazonCloud()
+        {
+            _accessKey = ConfigurationManager.AppSettings["AmazonAccessKey"];
+            _secretKey = ConfigurationManager.AppSettings["AmazonSecretKey"];
+            _endpoint = new AppConfigAWSRegion().Region;
+            _bucketName = ConfigurationManager.AppSettings["Bucket"];
+        }
 
         public AmazonCloud(string accessKey, string secretKey, RegionEndpoint endpoint)
         {

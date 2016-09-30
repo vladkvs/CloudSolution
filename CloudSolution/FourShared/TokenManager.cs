@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DotNetOpenAuth.OAuth.ChannelElements;
 using DotNetOpenAuth.OAuth.Messages;
 using DotNetOpenAuth.OpenId.Extensions.OAuth;
 
-namespace CloudSolution.FourShared
+namespace Cloud.Core.FourShared
 {
     class TokenManager : IConsumerTokenManager
     {
-        private static Dictionary<string, string> TokenSecrets =
+        private static readonly Dictionary<string, string> TokenSecrets =
             new Dictionary<string, string>();
 
         public TokenManager(string consumerKey, string consumerSecret)

@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json.Linq;
 
-namespace CloudSolution
+namespace Cloud.Core.MailRu
 {
     public class MailRuCloud : ICloud
     {
@@ -19,29 +17,38 @@ namespace CloudSolution
         private string CloudDomain = "https://cloud.mail.ru";
         private string AuthDomen = "https://auth.mail.ru";
 
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
         private string _token;
 
         public string Login { get; set; }
         public string Password { get; set; }
 
+        public MailRuCloud()
+        {
+            Login = ConfigurationManager.AppSettings["MailRuLogin"];
+            Password = ConfigurationManager.AppSettings["MailRuPassword"];
+        }
+
         public MailRuCloud(string login, string password)
         {
             Login = login;
             Password = password;
-
-            var handler = new HttpClientHandler()
-            {
-                CookieContainer = new CookieContainer(),
-                UseCookies = true
-            };
-            _httpClient = new HttpClient(handler);
-            _httpClient.DefaultRequestHeaders.UserAgent.Clear();
-            _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
         }
 
         private async Task<string> DoLogin()
         {
+            if (_httpClient == null)
+            {
+                var handler = new HttpClientHandler()
+                {
+                    CookieContainer = new CookieContainer(),
+                    UseCookies = true
+                };
+                _httpClient = new HttpClient(handler);
+                _httpClient.DefaultRequestHeaders.UserAgent.Clear();
+                _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
+            }
+
             string reqString = $"Login={Login}&Domain={Domain}&Password={this.Password}";
             string address = $"{AuthDomen}/cgi-bin/auth";
 
@@ -123,7 +130,7 @@ namespace CloudSolution
             string shardUrl = GetUrlForAction(ShardType.Upload).Result;
 
             string url = $"{shardUrl}?cloud_domain=2&{Login}";
-            FileStream file = File.Open("D:/Downloads/1cd375df-55a7-4ba6-b604-a6820123f9a0.jpg", FileMode.Open);
+            FileStream file = File.Open("D:/Downloads/79d242f1-9bdf-4577-bb2b-a68000f89964.jpg", FileMode.Open);
             var content = new MultipartFormDataContent {new StreamContent(file)};
 
             var response = _httpClient.PostAsync(url, content).Result;

@@ -7,8 +7,8 @@
     <ProjectGuid>{1712DF95-CDBB-4A24-84D2-30EECC0D9DB7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CloudSolution</RootNamespace>
-    <AssemblyName>CloudSolution</AssemblyName>
+    <RootNamespace>Cloud.Core</RootNamespace>
+    <AssemblyName>Cloud.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -82,6 +82,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Amazon\AmazonCloud.cs" />
+    <Compile Include="Factory\AmazonCreator.cs" />
+    <Compile Include="Factory\Creator.cs" />
+    <Compile Include="Factory\FourSharedCreator.cs" />
+    <Compile Include="Factory\MailRuCreator.cs" />
     <Compile Include="FourShared\FourSharedCloud.cs" />
     <Compile Include="FourShared\FourSharedConsumer.cs" />
     <Compile Include="FourShared\TokenManager.cs" />

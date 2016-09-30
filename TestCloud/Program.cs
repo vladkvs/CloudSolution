@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon;
-using CloudSolution;
+using Cloud.Core.MailRu;
 using Microsoft.SqlServer.Server;
 
 namespace TestCloud
@@ -14,11 +14,11 @@ namespace TestCloud
     {
         static void Main(string[] args)
         {
-            //MailRuCloud mailRu = new MailRuCloud("", "");
-            //string token = mailRu.GetServiceToken().Result;
-            //string createFolder = mailRu.CreateFolder("NewFolder/NewFolder2/NewFolder3");
-            //string folderList = mailRu.GetFolderList("");
-            //string uploadFile = mailRu.UploadFile("", "");
+            MailRuCloud mailRu = new MailRuCloud("vlad.kvs.95@mail.ru", "h487fn512p");
+            string token = mailRu.GetServiceToken().Result;
+            string createFolder = mailRu.CreateFolder("NewFolder/NewFolder2/NewFolder3");
+            string folderList = mailRu.GetFolderList("");
+            string uploadFile = mailRu.UploadFile("", "");
 
             //ICloud amazon = new AmazonCloud("", "", RegionEndpoint.EUCentral1);
             //string token = amazon.GetServiceToken().Result;
@@ -31,8 +31,8 @@ namespace TestCloud
             //var downloadFile = amazon.DownloadFile("newfolder10/newfolder11/test12.jpg", "D:/Downloads/test.jpg");
             //string result = amazon.GetFileList("");
 
-            FourSharedCloud fourShared = new FourSharedCloud("", "");
-            var user = fourShared.GetServiceToken().Result;
+            //FourSharedCloud fourShared = new FourSharedCloud("", "");
+            //var user = fourShared.GetServiceToken().Result;
         }
     }
 }

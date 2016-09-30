@@ -55,9 +55,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CloudSolution\CloudSolution.csproj">
+    <ProjectReference Include="..\CloudSolution\Cloud.Core.csproj">
       <Project>{1712df95-cdbb-4a24-84d2-30eecc0d9db7}</Project>
-      <Name>CloudSolution</Name>
+      <Name>Cloud.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

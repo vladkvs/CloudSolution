@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudSolution", "CloudSolution\CloudSolution.csproj", "{1712DF95-CDBB-4A24-84D2-30EECC0D9DB7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cloud.Core", "CloudSolution\Cloud.Core.csproj", "{1712DF95-CDBB-4A24-84D2-30EECC0D9DB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCloud", "TestCloud\TestCloud.csproj", "{099755CE-4A53-4DA7-AA15-33976AECE63A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cloud.Test", "TestCloud\Cloud.Test.csproj", "{099755CE-4A53-4DA7-AA15-33976AECE63A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cloud.Web", "Cloud.Web\Cloud.Web.csproj", "{5A4F68C0-C872-4C01-B113-FBCAF81D14E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{099755CE-4A53-4DA7-AA15-33976AECE63A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{099755CE-4A53-4DA7-AA15-33976AECE63A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{099755CE-4A53-4DA7-AA15-33976AECE63A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A4F68C0-C872-4C01-B113-FBCAF81D14E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A4F68C0-C872-4C01-B113-FBCAF81D14E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A4F68C0-C872-4C01-B113-FBCAF81D14E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A4F68C0-C872-4C01-B113-FBCAF81D14E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

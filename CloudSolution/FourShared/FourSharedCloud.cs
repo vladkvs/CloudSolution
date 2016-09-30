@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
-using CloudSolution.FourShared;
 using DotNetOpenAuth.Messaging;
 
-namespace CloudSolution
+namespace Cloud.Core.FourShared
 {
     public class FourSharedCloud : ICloud
     {
@@ -18,6 +15,13 @@ namespace CloudSolution
         private readonly string _consumerSecretKey;
         private readonly FourSharedConsumer _consumer;
         private string _accessToken;
+
+        public FourSharedCloud()
+        {
+            _consumerKey = ConfigurationManager.AppSettings["4SharedConsumerKey"];
+            _consumerSecretKey = ConfigurationManager.AppSettings["4SharedConsumerSecretKey"];
+            _consumer = new FourSharedConsumer(_consumerKey, _consumerSecretKey);
+        }
 
         public FourSharedCloud(string consumerKey, string consumerSecretKey)
         {
