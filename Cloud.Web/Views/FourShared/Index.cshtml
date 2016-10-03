@@ -1,0 +1,54 @@
+﻿@using System.Web.WebSockets
+@model Cloud.Web.Models.CloudViewModel
+
+@{
+    ViewBag.Title = "4Shared Cloud";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string token = ViewBag.Token;
+}
+
+<h2>4Shared</h2>
+<h5>Service token: @token</h5>
+
+<div class="row">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Last modified</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @if (Model.Folders != null)
+            {
+                foreach (var folder in Model.Folders)
+                {
+                    <tr>
+                        <td>@folder.Name</td>
+                        <td></td>
+                        <td></td>
+                        <td>@Html.ActionLink("Details", "Details", new { path = @folder.Name })</td>
+                    </tr>
+                }
+            }
+            @if (Model.Files != null)
+            {
+                foreach (var file in Model.Files)
+                {
+                    <tr>
+                        <td>@file.Name</td>
+                        <td>@file.Size</td>
+                        <td>@file.LastModified</td>
+                        <td>
+                            @Html.ActionLink("Download", "Download", new { path = Model.Path + file.Name }) |
+                            @Html.ActionLink("Download", "Delete", new { path = Model.Path + file.Name })
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

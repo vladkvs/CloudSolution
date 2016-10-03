@@ -30,6 +30,7 @@ namespace Cloud.Web.Controllers
                     Folders = amazonCloud.GetFolderList(""),
                     Files = amazonCloud.GetFileList("")
                 };
+                ViewBag.Token = token;
             }
 
             return View(model);

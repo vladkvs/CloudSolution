@@ -4,9 +4,11 @@
 @{
     ViewBag.Title = "Amazon Cloud";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    string token = ViewBag.Token;
 }
 
 <h2>Amazon</h2>
+<h5>Service token: @token</h5>
 
 <div class="row">
     <table class="table table-striped">

@@ -7,10 +7,11 @@ using System.Net;
 using System.Threading.Tasks;
 using Cloud.Core.Models;
 using DotNetOpenAuth.Messaging;
+using Newtonsoft.Json.Linq;
 
 namespace Cloud.Core.FourShared
 {
-    public class FourSharedCloud : ICloud
+    public class FourSharedCloud : Logger, ICloud
     {
         private readonly string _consumerKey;
         private readonly string _consumerSecretKey;
@@ -34,18 +35,23 @@ namespace Cloud.Core.FourShared
 
         public Task<string> GetServiceToken()
         {
-            return Task.Run(() =>
+            Uri url = null;
+            var firstTask = new Task(() =>
             {
-                var url = _consumer.BeginAuth();
+                url = _consumer.BeginAuth();
 
                 var process = Process.Start(url.AbsoluteUri);
                 process?.WaitForExit();
-
+            });
+            var secondTask = firstTask.ContinueWith((t) =>
+            {
                 string verifier = _consumer.TokenManager.GetTokenSecret(url.Query.Split('=')[1]);
                 _accessToken = _consumer.CompleteAuth(verifier);
-
                 return _accessToken;
             });
+            firstTask.Start();
+
+            return secondTask;
         }
 
         public string GetUserInfo()
@@ -65,12 +71,31 @@ namespace Cloud.Core.FourShared
 
         public IEnumerable<CloudFolder> GetFolderList(string path)
         {
-            throw new NotImplementedException();
+            dynamic user = JObject.Parse(GetUserInfo());
+            string rootFoolderId = user.rootFolderId;
+            try
+            {
+                var request =
+                    _consumer.PrepareAuthorizedRequest(
+                        new MessageReceivingEndpoint(
+                            "https://api.4shared.com/v1_2/folders/" + rootFoolderId,
+                            HttpDeliveryMethods.GetRequest | HttpDeliveryMethods.AuthorizationHeaderRequest),
+                        _accessToken,
+                        new List<MultipartPostPart>());
+                var response = (HttpWebResponse) request.GetResponse();
+                var reader = new StreamReader(response.GetResponseStream());
+                string objText = reader.ReadToEnd();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't get folder list", ex);
+            }
+            return null;
         }
 
         public IEnumerable<CloudFile> GetFileList(string path)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public Stream DownloadFile(string sourceFile)

@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Cloud.Core.MailRu
 {
-    public class MailRuCloud : ICloud
+    public class MailRuCloud : Logger, ICloud
     {
         private string Domain = "mail.ru";
         private string CloudDomain = "https://cloud.mail.ru";
@@ -96,20 +96,26 @@ namespace Cloud.Core.MailRu
 
             var uri =
                 new Uri($"{CloudDomain}/api/v2/folder?token={_token}&home={HttpUtility.UrlEncode(path)}");
-            
-            var response = _httpClient.GetAsync(uri).Result;
-            if (response.IsSuccessStatusCode)
-            {
 
+            try
+            {
+                var response = _httpClient.GetAsync(uri).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = response.Content.ReadAsStringAsync().Result;
+                }
             }
-            var resul = response.Content.ReadAsStringAsync().Result;
+            catch (Exception ex)
+            {
+                Log.Error("Can't get folder list", ex);
+            }
 
             return null;
         }
 
         public IEnumerable<CloudFile> GetFileList(string path)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public Stream DownloadFile(string sourceFile)
@@ -132,12 +138,21 @@ namespace Cloud.Core.MailRu
             string shardUrl = GetUrlForAction(ShardType.Upload).Result;
 
             string url = $"{shardUrl}?cloud_domain=2&{Login}";
-            FileStream file = File.Open("D:/Downloads/79d242f1-9bdf-4577-bb2b-a68000f89964.jpg", FileMode.Open);
-            var content = new MultipartFormDataContent {new StreamContent(file)};
+            try
+            {
+                FileStream file = File.Open(sourceFile, FileMode.Open);
+                var content = new MultipartFormDataContent {new StreamContent(file)};
 
-            var response = _httpClient.PostAsync(url, content).Result;
-            var result = response.Content.ReadAsStringAsync().Result;
-            return null;
+                var response = _httpClient.PostAsync(url, content).Result;
+                var result = response.Content.ReadAsStringAsync().Result;
+
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't upload file", ex);
+                return null;
+            }
         }
 
         public string CreateFolder(string path)
@@ -145,15 +160,23 @@ namespace Cloud.Core.MailRu
             string reqString =$"home={HttpUtility.UrlEncode(path)}&conflict=rename&api={2}&token={_token}";
             
             var url = new Uri($"{CloudDomain}/api/v2/folder/add");
-            var response = _httpClient.PostAsync(url, new StringContent(reqString)).Result;
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return string.Empty;
-            }
+                var response = _httpClient.PostAsync(url, new StringContent(reqString)).Result;
 
-            var result = response.Content.ReadAsStringAsync().Result;
-            return result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = response.Content.ReadAsStringAsync().Result;
+                    return string.Empty;
+                }
+
+                return response.StatusCode.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't create folder", ex);
+                return null;
+            }
         }
 
         public string Delete(string path)
