@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Cloud.Core.Models;
 using DotNetOpenAuth.Messaging;
 
 namespace Cloud.Core.FourShared
@@ -62,12 +63,12 @@ namespace Cloud.Core.FourShared
             return reader.ReadToEnd();
         }
 
-        public string GetFolderList(string path)
+        public IEnumerable<CloudFolder> GetFolderList(string path)
         {
             throw new NotImplementedException();
         }
 
-        public string GetFileList(string path)
+        public IEnumerable<CloudFile> GetFileList(string path)
         {
             throw new NotImplementedException();
         }

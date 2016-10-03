@@ -58,6 +58,10 @@
       <HintPath>..\packages\DotNetOpenAuth.OpenId.Core.4.3.4.13329\lib\net45-full\DotNetOpenAuth.OpenId.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -89,9 +93,13 @@
     <Compile Include="FourShared\FourSharedCloud.cs" />
     <Compile Include="FourShared\FourSharedConsumer.cs" />
     <Compile Include="FourShared\TokenManager.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="MailRu\ShardType.cs" />
     <Compile Include="ICloud.cs" />
     <Compile Include="MailRu\MailRuCloud.cs" />
+    <Compile Include="Models\CloudFile.cs" />
+    <Compile Include="Models\CloudFolder.cs" />
+    <Compile Include="Models\CloudItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

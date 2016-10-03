@@ -17,7 +17,6 @@ namespace TestCloud
             MailRuCloud mailRu = new MailRuCloud("vlad.kvs.95@mail.ru", "h487fn512p");
             string token = mailRu.GetServiceToken().Result;
             string createFolder = mailRu.CreateFolder("NewFolder/NewFolder2/NewFolder3");
-            string folderList = mailRu.GetFolderList("");
             string uploadFile = mailRu.UploadFile("", "");
 
             //ICloud amazon = new AmazonCloud("", "", RegionEndpoint.EUCentral1);

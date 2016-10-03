@@ -1,13 +1,15 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using Cloud.Core.Models;
 
 namespace Cloud.Core
 {
     public interface ICloud
     {
         Task<string> GetServiceToken();
-        string GetFolderList(string path);
-        string GetFileList(string path);
+        IEnumerable<CloudFolder> GetFolderList(string path);
+        IEnumerable<CloudFile> GetFileList(string path);
         Stream DownloadFile(string sourceFile);
         string DownloadFile(string sourceFile, string destinationFile);
         string UploadFile(Stream sourceDataStream, string destFileName);

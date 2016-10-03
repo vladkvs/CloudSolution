@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web;
+using Cloud.Core.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Cloud.Core.MailRu
@@ -85,7 +87,7 @@ namespace Cloud.Core.MailRu
             return await DoLogin();
         }
 
-        public string GetFolderList(string path)
+        public IEnumerable<CloudFolder> GetFolderList(string path)
         {
             if (string.IsNullOrEmpty(path))
             {
@@ -105,7 +107,7 @@ namespace Cloud.Core.MailRu
             return null;
         }
 
-        public string GetFileList(string path)
+        public IEnumerable<CloudFile> GetFileList(string path)
         {
             throw new NotImplementedException();
         }

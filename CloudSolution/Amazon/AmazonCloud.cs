@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
@@ -9,17 +10,19 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
+using Cloud.Core.Models;
+using log4net;
 
 namespace Cloud.Core.Amazon 
 {
-    public class AmazonCloud : ICloud
+    public class AmazonCloud : Logger, ICloud, IDisposable
     {
         private readonly string _bucketName;
         private string _accessKey;
         private string _secretKey;
         private RegionEndpoint _endpoint;
         private AmazonS3Client _httpClient;
-
+        
         public string AccessKey
         {
             get { return _accessKey; }
@@ -37,7 +40,7 @@ namespace Cloud.Core.Amazon
             get { return _endpoint; }
             set { _endpoint = value; }
         }
-
+        
         public AmazonCloud()
         {
             _accessKey = ConfigurationManager.AppSettings["AmazonAccessKey"];
@@ -69,44 +72,90 @@ namespace Cloud.Core.Amazon
             return await DoLogin();
         }
 
-        public string GetFolderList(string path)
+        public IEnumerable<CloudFolder> GetFolderList(string path)
         {
-            var request = new ListObjectsV2Request()
+            List<CloudFolder> listFolders = new List<CloudFolder>();
+            var prefix = path == string.Empty ? path : path.EndsWith("/") ? path : path + "/";
+
+            var request = new ListObjectsRequest()
             {
                 BucketName = _bucketName,
-                Prefix = path
+                Prefix = prefix
             };
 
-            var response = _httpClient.ListObjectsV2(request);
-
-            if (response.HttpStatusCode == HttpStatusCode.OK)
+            try
             {
-                var folders = response.S3Objects.Where(x => x.Size == 0 && x.Key.EndsWith(@"/")).ToList();
-                string folderString = string.Empty;
-                folders.ForEach(f => folderString += f.Key + "\n");
-                return folderString;
+                do
+                {
+                    var response = _httpClient.ListObjects(request);
+                    if (response.HttpStatusCode != HttpStatusCode.OK)
+                    {
+                        return null;
+                    }
+
+                    listFolders.AddRange(from folder in response.S3Objects
+                        where
+                            folder.Key != prefix && folder.Size == 0 && folder.Key.EndsWith("/")
+                            && prefix.Count(x => x == '/') == folder.Key.Count(x => x == '/') - 1
+                        select new CloudFolder()
+                        {
+                            Name = string.IsNullOrEmpty(path) ? folder.Key : folder.Key.Remove(0, prefix.Length),
+                            Path = prefix
+                        });
+
+                    request.Marker = response.IsTruncated ? response.NextMarker : null;
+                } while (request.Marker != null);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't get folder list", ex);
             }
 
-            return string.Empty;
+            return listFolders;
         }
 
-        public string GetFileList(string path)
+        public IEnumerable<CloudFile> GetFileList(string path)
         {
-            var response = _httpClient.ListObjectsV2(new ListObjectsV2Request()
+            List<CloudFile> listFiles = new List<CloudFile>();
+            var prefix = path == string.Empty ? path : path.EndsWith("/") ? path : path + "/";
+
+            var request = new ListObjectsRequest()
             {
                 BucketName = _bucketName,
-                Prefix = path
-            });
+                Prefix = prefix
+            };
 
-            if (response.HttpStatusCode == HttpStatusCode.OK)
+            try
             {
-                var files  = response.S3Objects.Where(x => x.Size > 0 && !x.Key.Contains(@"/")).ToList();
-                string filesString = string.Empty;
-                files.ForEach(f => filesString += f.Key + "\r" + f.Size + "\n");
-                return filesString;
+                do
+                {
+                    var response = _httpClient.ListObjects(request);
+                    if (response.HttpStatusCode != HttpStatusCode.OK)
+                    {
+                        return null;
+                    }
+
+                    listFiles.AddRange(from file in response.S3Objects
+                        where
+                            file.Size > 0 && !file.Key.EndsWith("/")
+                            && file.Key.Count(x => x == '/') == prefix.Count(x => x == '/')
+                        select new CloudFile()
+                        {
+                            Name = string.IsNullOrEmpty(path) ? file.Key : file.Key.Remove(0, prefix.Length),
+                            Path = prefix,
+                            Size = file.Size,
+                            LastModified = file.LastModified
+                        });
+
+                    request.Marker = response.IsTruncated ? response.NextMarker : null;
+                } while (request.Marker != null);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't get file list", ex);
             }
 
-            return string.Empty;
+            return listFiles;
         }
 
         public Stream DownloadFile(string sourceFile)
@@ -116,11 +165,18 @@ namespace Cloud.Core.Amazon
                 BucketName = _bucketName,
                 Key = sourceFile
             };
-            var response = _httpClient.GetObject(request);
-
-            if (response.HttpStatusCode == HttpStatusCode.OK)
+            try
             {
-                return response.ResponseStream;
+                var response = _httpClient.GetObject(request);
+
+                if (response.HttpStatusCode == HttpStatusCode.OK)
+                {
+                    return response.ResponseStream;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't download file", ex);
             }
 
             return null;
@@ -144,42 +200,61 @@ namespace Cloud.Core.Amazon
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                Log.Error("Can't create file", ex);
             }
+            return null;
         }
 
         public string UploadFile(Stream sourceDataStream, string destFileName)
         {
-            var response = _httpClient.PutObject(new PutObjectRequest()
+            var request = new PutObjectRequest()
             {
                 BucketName = _bucketName,
                 InputStream = sourceDataStream,
                 Key = destFileName
-            });
+            };
 
-            if (response.HttpStatusCode == HttpStatusCode.OK)
+            try
             {
-                return string.Empty;
+                var response = _httpClient.PutObject(request);
+
+                if (response.HttpStatusCode == HttpStatusCode.OK)
+                {
+                    return string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't upload file", ex);
             }
 
-            return response.HttpStatusCode.ToString();
+            return null;
         }
 
         public string UploadFile(string sourceFile, string destinationFile)
         {
-            var response = _httpClient.PutObject(new PutObjectRequest()
+            var request = new PutObjectRequest()
             {
                 BucketName = _bucketName,
                 FilePath = sourceFile,
                 Key = destinationFile
-            });
+            };
 
-            if (response.HttpStatusCode == HttpStatusCode.OK)
+            try
             {
-                return string.Empty;
+                var response = _httpClient.PutObject(request);
+
+                if (response.HttpStatusCode == HttpStatusCode.OK)
+                {
+                    return string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't upload file", ex);
             }
 
-            return response.HttpStatusCode.ToString();
+            return null;
         }
 
         public string CreateFolder(string path)
@@ -192,14 +267,22 @@ namespace Cloud.Core.Amazon
                 Key = path + "/",
                 ContentBody = string.Empty
             };
-            var response = _httpClient.PutObject(putRequest);
 
-            if (response.HttpStatusCode == HttpStatusCode.OK)
+            try
             {
-                return string.Empty;
+                var response = _httpClient.PutObject(putRequest);
+
+                if (response.HttpStatusCode == HttpStatusCode.OK)
+                {
+                    return string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Can't create folder", ex);
             }
 
-            return response.HttpStatusCode.ToString();
+            return null;
         }
 
         public string Delete(string path)
@@ -217,8 +300,14 @@ namespace Cloud.Core.Amazon
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                Log.Error("Can't delete file", ex);
             }
+            return null;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

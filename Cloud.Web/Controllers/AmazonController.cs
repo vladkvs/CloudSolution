@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -7,6 +8,7 @@ using System.Web.Mvc;
 using Cloud.Core;
 using Cloud.Core.Amazon;
 using Cloud.Core.Factory;
+using Cloud.Web.Models;
 
 namespace Cloud.Web.Controllers
 {
@@ -15,22 +17,43 @@ namespace Cloud.Web.Controllers
         // GET: Amazon
         public async Task<ActionResult> Index()
         {
-            ICloud amazonCloud = new AmazonCreator().CreateCloud();
+            CloudViewModel model = null;
+
+            Creator creator = new AmazonCreator();
+            ICloud amazonCloud = creator.CreateCloud();
 
             if (amazonCloud != null)
             {
                 string token = await amazonCloud.GetServiceToken();
-                ViewBag.Folders = amazonCloud.GetFolderList("");
-                ViewBag.Files = amazonCloud.GetFileList("");
+                model = new CloudViewModel
+                {
+                    Folders = amazonCloud.GetFolderList(""),
+                    Files = amazonCloud.GetFileList("")
+                };
             }
 
-            return View();
+            return View(model);
         }
 
         // GET: Amazon/Details/5
-        public ActionResult Details(int id)
+        public async Task<ActionResult> Details(string path)
         {
-            return View();
+            CloudViewModel model = null;
+
+            Creator creator = new AmazonCreator();
+            ICloud amazonCloud = creator.CreateCloud();
+
+            if (amazonCloud != null)
+            {
+                string token = await amazonCloud.GetServiceToken();
+                model = new CloudViewModel
+                {
+                    Folders = amazonCloud.GetFolderList(path),
+                    Files = amazonCloud.GetFileList(path)
+                };
+            }
+
+            return View("Index", model);
         }
 
         // GET: Amazon/Create
@@ -77,26 +100,35 @@ namespace Cloud.Web.Controllers
             }
         }
 
-        // GET: Amazon/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
         // POST: Amazon/Delete/5
         [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
+        public async Task<ActionResult> Delete(string path)
         {
-            try
+            Creator creator = new AmazonCreator();
+            ICloud amazonCloud = creator.CreateCloud();
+            
+            if (amazonCloud != null)
             {
-                // TODO: Add delete logic here
+                string token = await amazonCloud.GetServiceToken();
+                string result = amazonCloud.Delete(path);
+            }
 
-                return RedirectToAction("Index");
-            }
-            catch
+            return RedirectToAction("Index");
+        }
+
+        public async Task<ActionResult> Download(string path)
+        {
+            Creator creator = new AmazonCreator();
+            ICloud amazonCloud = creator.CreateCloud();
+
+            Stream file = null;
+            if (amazonCloud != null)
             {
-                return View();
+                string token = await amazonCloud.GetServiceToken();
+                file = amazonCloud.DownloadFile(path);
             }
+
+            return File(file, "application/octet-stream");
         }
     }
 }
